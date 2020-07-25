@@ -2,12 +2,10 @@ import { Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { Token } from 'src/@types/token';
 import {
-  scope,
   as,
   rs,
   obParticipantId,
   interactionId,
-  intentId,
   auth,
 } from '../config/environments';
 const https = require('https');
@@ -34,10 +32,10 @@ export class AuthService {
     });
   }
 
-  async getCredentialsAccessClient() {
+  async getCredentialsAccessClient(): Promise<string> {
     const body = {
       grant_type: 'client_credentials',
-      scope,
+      scope: 'accounts openid',
     };
 
     const headers = {
@@ -59,7 +57,31 @@ export class AuthService {
     return this.createConsentiment(response.data);
   }
 
-  async createConsentiment(token: Token) {
+  async getToken(code: string) {
+    const body = {
+      grant_type: 'authorization_code',
+      scope: 'accounts',
+      code: code,
+      redirect_uri: 'http://www.google.co.uk',
+    };
+
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: auth,
+    };
+
+    const response = await this.instance
+      .post(`${as}/token`, qs.stringify(body), {
+        headers,
+      })
+      .catch(error => {
+        console.log(error);
+        return error;
+      });
+    return response.data;
+  }
+
+  private async createConsentiment(token: Token): Promise<string> {
     const headers = {
       'Content-Type': 'application/json',
       'x-fapi-financial-id': obParticipantId,
@@ -94,21 +116,21 @@ export class AuthService {
       },
       Risk: {},
     };
-    await this.instance.post(
+    const response = await this.instance.post(
       `${rs}/open-banking/v3.1/aisp/account-access-consents`,
       body,
       { headers },
     );
 
-    return this.getUrlRedirect();
+    return this.getUrlRedirect(response.data.Data.ConsentId);
   }
 
-  async getUrlRedirect() {
+  private async getUrlRedirect(consentId: string): Promise<string> {
     const headers = {
       Authorization: auth,
     };
     const response = await this.instance.get(
-      `${rs}/ozone/v1.0/auth-code-url/${intentId}?scope=accounts&alg=none`,
+      `${rs}/ozone/v1.0/auth-code-url/${consentId}?scope=accounts&alg=none`,
       { headers },
     );
 
