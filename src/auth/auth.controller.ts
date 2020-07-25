@@ -7,6 +7,6 @@ export class AuthController {
 
   @Get()
   getCredentialsAcessClient() {
-    return this.authService.getCredentialsAcessClient();
+    return this.authService.getCredentialsAccessClient();
   }
 }
