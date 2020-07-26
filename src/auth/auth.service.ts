@@ -9,6 +9,7 @@ import {
   auth,
 } from '../config/environments';
 import { Scope } from 'src/enums/scope.enum';
+import { Transaction } from 'src/payments/transaction';
 const https = require('https');
 const fs = require('fs');
 const qs = require('querystring');
@@ -33,7 +34,10 @@ export class AuthService {
     });
   }
 
-  async getCredentialsAccessClient(scope: Scope): Promise<string> {
+  async getCredentialsAccessClient(
+    scope: Scope,
+    transaction?: Transaction,
+  ): Promise<string> {
     const body = {
       grant_type: 'client_credentials',
       scope: `${scope} openid`,
@@ -52,7 +56,7 @@ export class AuthService {
         return error;
       });
 
-    return this.createConsentiment(response.data, scope);
+    return this.createConsentiment(response.data, scope, transaction);
   }
 
   async getToken(code: string): Promise<Token> {
@@ -82,6 +86,7 @@ export class AuthService {
   private async createConsentiment(
     token: Token,
     scope: Scope,
+    transaction?: Transaction,
   ): Promise<string> {
     const headers = {
       'Content-Type': 'application/json',
@@ -123,19 +128,7 @@ export class AuthService {
 
     const bodyScopePayment = {
       Data: {
-        Initiation: {
-          InstructionIdentification: 'PMT.01234567890123456789.0124',
-          EndToEndIdentification: 'TRX.01234567890.0124',
-          InstructedAmount: {
-            Amount: '15.00',
-            Currency: 'BRL',
-          },
-          CreditorAccount: {
-            SchemeName: 'BR.CPF',
-            Identification: '12345678904',
-            Name: 'José da Silva Xavier',
-          },
-        },
+        Initiation: transaction,
       },
       Risk: {},
     };
