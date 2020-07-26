@@ -1,37 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { Token } from 'src/@types/token';
-import {
-  as,
-  rs,
-  obParticipantId,
-  interactionId,
-  auth,
-} from '../config/environments';
 import { Scope } from 'src/enums/scope.enum';
 import { Transaction } from 'src/payments/transaction';
+import { permissions } from 'src/accounts/permissions';
 const https = require('https');
 const fs = require('fs');
 const qs = require('querystring');
+
+const as = 'https://as1.tecban-sandbox.o3bank.co.uk';
+const rs = 'https://rs1.tecban-sandbox.o3bank.co.uk';
 
 @Injectable()
 export class AuthService {
   httpsAgent;
   instance: AxiosInstance;
+  authorization: string;
 
   constructor() {
     this.httpsAgent = new https.Agent({
-      cert: fs.readFileSync(
-        process.cwd() + '/src/config/client_certificate.crt',
-      ),
-      key: fs.readFileSync(
-        process.cwd() + '/src/config/client_private_key.key',
-      ),
+      cert: fs.readFileSync(process.cwd() + '/config/client_certificate.crt'),
+      key: fs.readFileSync(process.cwd() + '/config/client_private_key.key'),
       rejectUnauthorized: false,
     });
     this.instance = axios.create({
       httpsAgent: this.httpsAgent,
     });
+    this.authorization = `Basic ${process.env.AUTH}`;
   }
 
   async getCredentialsAccessClient(
@@ -46,7 +41,7 @@ export class AuthService {
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
       Accept: 'application/json',
-      Authorization: auth,
+      Authorization: this.authorization,
     };
 
     const response = await this.instance
@@ -69,7 +64,7 @@ export class AuthService {
 
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: auth,
+      Authorization: this.authorization,
     };
 
     const response = await this.instance
@@ -90,8 +85,8 @@ export class AuthService {
   ): Promise<string> {
     const headers = {
       'Content-Type': 'application/json',
-      'x-fapi-financial-id': obParticipantId,
-      'x-fapi-interaction-id': interactionId,
+      'x-fapi-financial-id': process.env.OB_PARTICIPANT_ID,
+      'x-fapi-interaction-id': process.env.INTERACTION_ID,
       Authorization: `Bearer ${token.access_token}`,
     };
 
@@ -100,28 +95,7 @@ export class AuthService {
     }
     const bodyScopeAccounts = {
       Data: {
-        Permissions: [
-          'ReadAccountsBasic',
-          'ReadAccountsDetail',
-          'ReadBalances',
-          'ReadBeneficiariesBasic',
-          'ReadBeneficiariesDetail',
-          'ReadDirectDebits',
-          'ReadTransactionsBasic',
-          'ReadTransactionsCredits',
-          'ReadTransactionsDebits',
-          'ReadTransactionsDetail',
-          'ReadProducts',
-          'ReadStandingOrdersDetail',
-          'ReadProducts',
-          'ReadStandingOrdersDetail',
-          'ReadStatementsDetail',
-          'ReadParty',
-          'ReadOffers',
-          'ReadScheduledPaymentsBasic',
-          'ReadScheduledPaymentsDetail',
-          'ReadPartyPSU',
-        ],
+        Permissions: permissions,
       },
       Risk: {},
     };
@@ -132,6 +106,10 @@ export class AuthService {
       },
       Risk: {},
     };
+
+    if (scope === Scope.PAYMENTS) {
+      bodyScopePayment.Data.Initiation = transaction;
+    }
 
     const response = await this.instance
       .post(
@@ -156,7 +134,7 @@ export class AuthService {
     scope: Scope,
   ): Promise<string> {
     const headers = {
-      Authorization: auth,
+      Authorization: this.authorization,
     };
     const response = await this.instance.get(
       `${rs}/ozone/v1.0/auth-code-url/${consentId}?scope=${scope}&alg=none`,
