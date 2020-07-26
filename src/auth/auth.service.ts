@@ -32,10 +32,10 @@ export class AuthService {
     });
   }
 
-  async getCredentialsAccessClient(): Promise<string> {
+  async getCredentialsAccessClient(scope: string): Promise<string> {
     const body = {
       grant_type: 'client_credentials',
-      scope: 'accounts openid',
+      scope: `${scope} openid`,
     };
 
     const headers = {
@@ -44,20 +44,17 @@ export class AuthService {
       Authorization: auth,
     };
 
-    const response = await this.instance.post(
-      `${as}/token`,
-      qs.stringify(body),
-      { headers },
-    );
+    const response = await this.instance
+      .post(`${as}/token`, qs.stringify(body), { headers })
+      .catch(error => {
+        console.log(error);
+        return error;
+      });
 
-    if (response.status !== 200) {
-      // @TODO Handle error
-      console.log(response);
-    }
-    return this.createConsentiment(response.data);
+    return this.createConsentiment(response.data, scope);
   }
 
-  async getToken(code: string) {
+  async getToken(code: string): Promise<Token> {
     const body = {
       grant_type: 'authorization_code',
       scope: 'accounts',
@@ -81,7 +78,10 @@ export class AuthService {
     return response.data;
   }
 
-  private async createConsentiment(token: Token): Promise<string> {
+  private async createConsentiment(
+    token: Token,
+    scope: string,
+  ): Promise<string> {
     const headers = {
       'Content-Type': 'application/json',
       'x-fapi-financial-id': obParticipantId,
@@ -89,7 +89,10 @@ export class AuthService {
       Authorization: `Bearer ${token.access_token}`,
     };
 
-    const body = {
+    if (scope === 'payments') {
+      headers['x-fapi-customer-ip-address'] = '10.1.1.10';
+    }
+    const bodyScopeAccounts = {
       Data: {
         Permissions: [
           'ReadAccountsBasic',
@@ -116,21 +119,51 @@ export class AuthService {
       },
       Risk: {},
     };
-    const response = await this.instance.post(
-      `${rs}/open-banking/v3.1/aisp/account-access-consents`,
-      body,
-      { headers },
-    );
 
-    return this.getUrlRedirect(response.data.Data.ConsentId);
+    const bodyScopePayment = {
+      Data: {
+        Initiation: {
+          InstructionIdentification: 'PMT.01234567890123456789.0124',
+          EndToEndIdentification: 'TRX.01234567890.0124',
+          InstructedAmount: {
+            Amount: '15.00',
+            Currency: 'BRL',
+          },
+          CreditorAccount: {
+            SchemeName: 'BR.CPF',
+            Identification: '12345678904',
+            Name: 'José da Silva Xavier',
+          },
+        },
+      },
+      Risk: {},
+    };
+
+    const response = await this.instance
+      .post(
+        `${rs}/open-banking/v3.1/${
+          scope === 'payments' ? 'pisp/domestic-payment' : 'aisp/account-access'
+        }-consents`,
+        scope === 'payments' ? bodyScopePayment : bodyScopeAccounts,
+        { headers },
+      )
+      .catch(error => {
+        console.log(error);
+        return error;
+      });
+
+    return this.getUrlRedirect(response.data.Data.ConsentId, scope);
   }
 
-  private async getUrlRedirect(consentId: string): Promise<string> {
+  private async getUrlRedirect(
+    consentId: string,
+    scope: string,
+  ): Promise<string> {
     const headers = {
       Authorization: auth,
     };
     const response = await this.instance.get(
-      `${rs}/ozone/v1.0/auth-code-url/${consentId}?scope=accounts&alg=none`,
+      `${rs}/ozone/v1.0/auth-code-url/${consentId}?scope=${scope}&alg=none`,
       { headers },
     );
 

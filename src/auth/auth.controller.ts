@@ -1,17 +1,18 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { Token } from 'src/@types/token';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Get()
-  getCredentialsAcessClient(): Promise<string> {
-    return this.authService.getCredentialsAccessClient();
+  getCredentialsAcessClient(@Query('scope') scope: string): Promise<string> {
+    return this.authService.getCredentialsAccessClient(scope);
   }
 
   @Get('token')
-  authentication(@Query('code') code: string) {
+  authentication(@Query('code') code: string): Promise<Token> {
     return this.authService.getToken(code);
   }
 }
