@@ -6,11 +6,6 @@ import { Token } from 'src/@types/token';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Get()
-  getCredentialsAcessClient(@Query('scope') scope: string): Promise<string> {
-    return this.authService.getCredentialsAccessClient(scope);
-  }
-
   @Get('token')
   authentication(@Query('code') code: string): Promise<Token> {
     return this.authService.getToken(code);

@@ -8,6 +8,7 @@ import {
   interactionId,
   auth,
 } from '../config/environments';
+import { Scope } from 'src/enums/scope.enum';
 const https = require('https');
 const fs = require('fs');
 const qs = require('querystring');
@@ -32,7 +33,7 @@ export class AuthService {
     });
   }
 
-  async getCredentialsAccessClient(scope: string): Promise<string> {
+  async getCredentialsAccessClient(scope: Scope): Promise<string> {
     const body = {
       grant_type: 'client_credentials',
       scope: `${scope} openid`,
@@ -80,7 +81,7 @@ export class AuthService {
 
   private async createConsentiment(
     token: Token,
-    scope: string,
+    scope: Scope,
   ): Promise<string> {
     const headers = {
       'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export class AuthService {
       Authorization: `Bearer ${token.access_token}`,
     };
 
-    if (scope === 'payments') {
+    if (scope === Scope.PAYMENTS) {
       headers['x-fapi-customer-ip-address'] = '10.1.1.10';
     }
     const bodyScopeAccounts = {
@@ -142,9 +143,11 @@ export class AuthService {
     const response = await this.instance
       .post(
         `${rs}/open-banking/v3.1/${
-          scope === 'payments' ? 'pisp/domestic-payment' : 'aisp/account-access'
+          scope === Scope.PAYMENTS
+            ? 'pisp/domestic-payment'
+            : 'aisp/account-access'
         }-consents`,
-        scope === 'payments' ? bodyScopePayment : bodyScopeAccounts,
+        scope === Scope.PAYMENTS ? bodyScopePayment : bodyScopeAccounts,
         { headers },
       )
       .catch(error => {
@@ -157,7 +160,7 @@ export class AuthService {
 
   private async getUrlRedirect(
     consentId: string,
-    scope: string,
+    scope: Scope,
   ): Promise<string> {
     const headers = {
       Authorization: auth,
