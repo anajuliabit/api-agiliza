@@ -8,13 +8,13 @@ Esta API foi desenvolvida durante o <a href="https://hackathon.tecban.com.br/"><
 </p>
 
   <div>
-    <img alt="GitHub language count" src="https://img.shields.io/github/languages/count/anajuliabit/api-hackathon-tecban?color=%233a86ff">
-    <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/anajuliabit/api-hackathon-tecban?color=233a86ff">
+    <img alt="GitHub language count" src="https://img.shields.io/github/languages/count/anajuliabit/api-agiliza?color=%233a86ff">
+    <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/anajuliabit/api-agiliza?color=233a86ff">
     <a href="https://www.linkedin.com/in/anajuliabit/">
       <img alt="Made by Ana Juia" src="https://img.shields.io/badge/made%20by-Ana%20Julia-%23?color=%233a86ff">
     </a>
     <a href="https://github.com/anajuliabit/megahack-sebrae-backend/commits/master">
-      <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/anajuliabit/api-hackathon-tecban?color=%233a86ff">
+      <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/anajuliabit/api-agiliza?color=%233a86ff">
     </a>
   </div>
 </div>
