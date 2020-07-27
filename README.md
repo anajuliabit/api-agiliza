@@ -44,4 +44,4 @@ $ npm run start:dev
 
 ```
 
-A aplicação ficará disponível em: [http://localhost:3000](http://localhost:3000)
+A aplicação ficará disponível em: [http://localhost:3000](http://localhost:3333)
